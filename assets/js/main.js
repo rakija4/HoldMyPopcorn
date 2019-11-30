@@ -64,48 +64,59 @@ function displayData() {
         resultsList.removeChild(resultsList.firstChild);
     }
 
-    moviesArr.forEach(item => {
-        const title = item.title;
-        const originalTitle = item.original_title;
-        const id = item.id;
-        const releaseDate = item.release_date;
-        const year = releaseDate.slice(0, 4);
-        const poster = item.poster_path;
+    if (moviesArr.length > 0) {
+        moviesArr.forEach(item => {
+            const title = item.title;
+            const originalTitle = item.original_title;
+            const id = item.id;
+            const releaseDate = item.release_date;
+            const year = releaseDate.slice(0, 4);
+            const poster = item.poster_path;
+            const resultsItem = document.createElement('li');
+            const itemTitle = document.createElement('span');
+            const itemYear = document.createElement('span');
+            const innerSpan = document.createElement('span');
+            const itemImg = document.createElement('img');
+
+            resultsItem.classList.add('c-search__item');
+            resultsItem.id = id;
+            itemTitle.classList.add('c-search__item-title');
+            itemYear.classList.add('c-search__item-year', 't4');
+            innerSpan.classList.add('_inner-span');
+            itemImg.classList.add('c-search__item-img');
+            resultsItem.classList.add('c-search__item--hover');
+
+            if ((title === originalTitle) || ((title !== originalTitle) && (stringMatches(title, searchPhrase)))) {
+                itemTitle.innerText = title;
+                itemImg.alt = `movie poster for ${title}`;
+            } else {
+                itemTitle.innerText = originalTitle;
+                itemImg.alt = `movie poster for ${originalTitle}`;
+            }
+
+            itemTitle.innerText = wrap(itemTitle.innerText, 50);
+
+            if (poster !== null)
+                itemImg.src = `https://image.tmdb.org/t/p/w92/${poster}`;
+            else
+                itemImg.src = 'assets/img/fallback_w92.jpg';
+
+            innerSpan.innerText = `(${year})`;
+            resultsItem.appendChild(itemTitle);
+            itemYear.appendChild(innerSpan);
+            resultsItem.appendChild(itemYear);
+            resultsItem.appendChild(itemImg);
+            resultsList.appendChild(resultsItem);
+
+            resultsItem.addEventListener('click', resultsListItemClick);
+        })
+    } else {
         const resultsItem = document.createElement('li');
-        const itemTitle = document.createElement('span');
-        const itemYear = document.createElement('span');
-        const innerSpan = document.createElement('span');
-        const itemImg = document.createElement('img');
-
-        resultsItem.classList.add('c-search__item');
-        resultsItem.id = id;
-        itemTitle.classList.add('c-search__item-title');
-        itemYear.classList.add('c-search__item-year');
-        innerSpan.classList.add('_inner-span');
-        itemImg.classList.add('c-search__item-img');
-        resultsItem.classList.add('c-search__item--hover');
-
-        if ((title === originalTitle) || ((title !== originalTitle) && (stringMatches(title, searchPhrase))))
-            itemTitle.innerText = title;
-        else
-            itemTitle.innerText = originalTitle;
-
-        itemTitle.innerText = wrap(itemTitle.innerText, 50);
-
-        if (poster !== null)
-            itemImg.src = `https://image.tmdb.org/t/p/w92/${poster}`;
-        else
-            itemImg.src = 'assets/img/fallback_w92.jpg';
-
-        innerSpan.innerText = `(${year})`;
-        resultsItem.appendChild(itemTitle);
-        itemYear.appendChild(innerSpan);
-        resultsItem.appendChild(itemYear);
-        resultsItem.appendChild(itemImg);
+        resultsItem.classList.add('c-search__no-item', 't4');
+        resultsItem.innerText = 'No results... :( ';
         resultsList.appendChild(resultsItem);
+    }
 
-        resultsItem.addEventListener('click', resultsListItemClick);
-    })
 
     searchBtn.classList.remove('c-search__btn--loading');
 }
@@ -149,6 +160,7 @@ async function getCrewAsync() {
         console.log(err);
     }
 
+    console.log(castArr);
     return [directorArr, writerArr, castArr];
 }
 
@@ -227,6 +239,8 @@ async function showDetailsAsync(item) {
     const directorArr = crew[0];
     const writerArr = crew[1];
     const castArr = crew[2];
+
+    console.log(castArr);
 
     const countriesArr = details[0];
     const genresArr = details[1];
@@ -402,13 +416,19 @@ async function showDetailsAsync(item) {
             infoActors.appendChild(infoActor);
 
             const infoActorName = document.createElement('span');
-            infoActorName.classList.add('c-info__actor-fullname');
+            infoActorName.classList.add('c-info__actor-name');
             infoActorName.innerText = actor.name;
 
+            const infoActorCharacter = document.createElement('span');
+            infoActorCharacter.classList.add('c-info__actor-character');
+            infoActorCharacter.innerText = actor.character;
+
             infoActor.appendChild(infoActorName);
+            infoActor.appendChild(infoActorCharacter);
 
             const infoActorImg = document.createElement('img');
             infoActorImg.classList.add('c-info__actor-img')
+            infoActorImg.alt = `photo of ${actor.name} who acted as ${actor.character}`
 
             if (actor.profile_path)
                 infoActorImg.src = `https://image.tmdb.org/t/p/original${actor.profile_path}`;
@@ -534,7 +554,10 @@ function resultsListItemClick(event) {
 
         prevListItem = currentListItem;
 
-        currentListItem.scrollIntoView({ block: 'start',  behavior: 'smooth' });
+        currentListItem.scrollIntoView({
+            block: 'start',
+            behavior: 'smooth'
+        });
 
         entered = true;
     }
