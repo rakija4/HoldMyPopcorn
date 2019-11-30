@@ -554,10 +554,7 @@ function resultsListItemClick(event) {
 
         prevListItem = currentListItem;
 
-        currentListItem.scrollIntoView({
-            block: 'start',
-            behavior: 'smooth'
-        });
+        currentListItem.scrollIntoView();
 
         entered = true;
     }
