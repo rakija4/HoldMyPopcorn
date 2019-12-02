@@ -12,213 +12,113 @@ let detailsNode;
 let prevListItem;
 let currId;
 let entered = false;
+let moviesArr = [];
 
-// RegExp for filtering titles
-// value - string to check
-// searchValue - string to check with
-const stringMatches = (value, searchValue) => {
-    const reg1 = new RegExp(searchValue, 'gi');
-    const reg2 = new RegExp(searchValue.replace('&', 'and'), 'gi');
-    const reg3 = new RegExp(searchValue.replace('and', '&'), 'gi');
-    return value.match(reg1) || value.match(reg2) || value.match(reg3);
-}
-
-// Wrapping function 
-// s - string to wrap
-// w - indicates approximate number of characters after which text is wrapped
-const wrap = (s, w) => s.replace(
-    new RegExp(`(?![^\\n]{1,${w}}$)([^\\n]{1,${w}})\\s`, 'g'), '$1\n'
-);
-
-// Fetching basic data from API
-async function getDataAsync() {
-    moviesArr = [];
-
-    try {
-        searchPhrase = searchInput.value;
-        const url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${searchPhrase}`;
-        const res = await fetch(url);
-        const json = await res.json();
-        const totalPages = await json.total_pages;
-
-        for (let i = 1; i <= totalPages; i++) {
-            const secondRes = await fetch(url + '&page=' + i); //Second fetch to get data from all pages
-            const secondJson = await secondRes.json();
-
-            secondJson.results.forEach(item => {
-                const title = item.title;
-                const originalTitle = item.original_title;
-
-                if (((stringMatches(title, searchPhrase)) || (stringMatches(originalTitle, searchPhrase))) && ((item.release_date !== undefined) && (item.release_date !== '')))
-                    moviesArr.push(item);
-            })
-        }
-    } catch (err) {
-        console.log(err);
-    }
-}
-
-// Displaying fetched data
-function displayData() {
-    while (resultsList.firstChild) {
-        resultsList.removeChild(resultsList.firstChild);
-    }
-
-    if (moviesArr.length > 0) {
-        moviesArr.forEach(item => {
-            const title = item.title;
-            const originalTitle = item.original_title;
-            const id = item.id;
-            const releaseDate = item.release_date;
-            const year = releaseDate.slice(0, 4);
-            const poster = item.poster_path;
-            const resultsItem = document.createElement('li');
-            const itemTitle = document.createElement('span');
-            const itemYear = document.createElement('span');
-            const innerSpan = document.createElement('span');
-            const itemImg = document.createElement('img');
-
-            resultsItem.classList.add('c-search__item');
-            resultsItem.id = id;
-            itemTitle.classList.add('c-search__item-title');
-            itemYear.classList.add('c-search__item-year', 't4');
-            innerSpan.classList.add('_inner-span');
-            itemImg.classList.add('c-search__item-img');
-            resultsItem.classList.add('c-search__item--hover');
-
-            if ((title === originalTitle) || ((title !== originalTitle) && (stringMatches(title, searchPhrase)))) {
-                itemTitle.innerText = title;
-                itemImg.alt = `movie poster for ${title}`;
-            } else {
-                itemTitle.innerText = originalTitle;
-                itemImg.alt = `movie poster for ${originalTitle}`;
-            }
-
-            itemTitle.innerText = wrap(itemTitle.innerText, 50);
-
-            if (poster !== null)
-                itemImg.src = `https://image.tmdb.org/t/p/w92/${poster}`;
-            else
-                itemImg.src = 'assets/img/fallback_w92.jpg';
-
-            innerSpan.innerText = `(${year})`;
-            resultsItem.appendChild(itemTitle);
-            itemYear.appendChild(innerSpan);
-            resultsItem.appendChild(itemYear);
-            resultsItem.appendChild(itemImg);
-            resultsList.appendChild(resultsItem);
-
-            resultsItem.addEventListener('click', resultsListItemClick);
-        })
-    } else {
-        const resultsItem = document.createElement('li');
-        resultsItem.classList.add('c-search__no-item', 't4');
-        resultsItem.innerText = 'No results... :( ';
-        resultsList.appendChild(resultsItem);
-    }
-
-
-    searchBtn.classList.remove('c-search__btn--loading');
-}
-
-// Click event for .c-search__btn
 async function searchButtonClick(event) {
     event.preventDefault();
     searchBtn.classList.add('c-search__btn--loading');
-    await getDataAsync();
-    await displayData();
+    const {getResults, displayResults} = await import('./modules/results.js')
+    await getResults();
+    await displayResults();
 }
 
 searchBtn.addEventListener('click', searchButtonClick);
 
-// Fetching cast&crew data from API
-async function getCrewAsync() {
-    const castUrl = `https://api.themoviedb.org/3/movie/${currId}/credits?api_key=${apiKey}`;
+// // Fetching cast&crew data from API
+// async function getCrewAsync() {
+//     const castUrl = `https://api.themoviedb.org/3/movie/${currId}/credits?api_key=${apiKey}`;
 
-    let castArr = [];
-    let directorArr = [];
-    let writerArr = [];
+//     let castArr = [];
+//     let directorArr = [];
+//     let writerArr = [];
 
-    try {
-        const res = await fetch(castUrl);
-        const json = await res.json();
-        const cast = await json.cast;
-        const crew = await json.crew;
+//     try {
+//         const res = await fetch(castUrl);
+//         const json = await res.json();
+//         const cast = await json.cast;
+//         const crew = await json.crew;
 
-        crew.forEach(member => {
-            if (member.department === 'Directing')
-                directorArr.push(member.name);
-            if (member.department === 'Writing')
-                writerArr.push(member.name);
-        });
+//         crew.forEach(member => {
+//             if (member.department === 'Directing')
+//                 directorArr.push(member.name);
+//             if (member.department === 'Writing')
+//                 writerArr.push(member.name);
+//         });
 
-        for (let i = 0; i < 5; i++) {
-            if (cast[i] != undefined)
-                castArr.push(cast[i]);
-        }
-    } catch (err) {
-        console.log(err);
-    }
+//         for (let i = 0; i < 5; i++) {
+//             if (cast[i] != undefined)
+//                 castArr.push(cast[i]);
+//         }
+//     } catch (err) {
+//         console.log(err);
+//     }
 
-    console.log(castArr);
-    return [directorArr, writerArr, castArr];
-}
+//     return [directorArr, writerArr, castArr];
+// }
 
 // Getting details from API (genres, production countries, ratings, status)
-async function getMovieDetailsAsync() {
-    const detailsUrl = `https://api.themoviedb.org/3/movie/${currId}?api_key=${apiKey}`;
+// async function getMovieDetailsAsync() {
+//     const detailsUrl = `https://api.themoviedb.org/3/movie/${currId}?api_key=${apiKey}`;
 
-    genresArr = [];
-    countriesArr = [];
+//     genresArr = [];
+//     countriesArr = [];
 
-    try {
-        const res = await fetch(detailsUrl);
-        const json = await res.json();
+//     try {
+//         const res = await fetch(detailsUrl);
+//         const json = await res.json();
 
-        json.production_countries.forEach(country => {
-            //For full names change 'iso_3166_1' to 'name'
-            countriesArr.push(country.iso_3166_1);
-        });
+//         json.production_countries.forEach(country => {
+//             //For full names change 'iso_3166_1' to 'name'
+//             countriesArr.push(country.iso_3166_1);
+//         });
 
-        json.genres.forEach(genre => {
-            genresArr.push(genre.name);
-        })
+//         json.genres.forEach(genre => {
+//             genresArr.push(genre.name);
+//         })
 
-        ratingAverage = json.vote_average;
-        votesCount = json.vote_count;
-        status = json.status;
-        release = json.release_date;
-    } catch (err) {
-        console.log(err);
-    }
+//         ratingAverage = json.vote_average;
+//         votesCount = json.vote_count;
+//         status = json.status;
+//         release = json.release_date;
+//     } catch (err) {
+//         console.log(err);
+//     }
 
-    return [countriesArr, genresArr, ratingAverage, votesCount, release];
-}
+//     return [countriesArr, genresArr, ratingAverage, votesCount, release];
+// }
 
-// Getting youtube link to the trailer
-async function getVideoAsync() {
-    const videoUrl = `http://api.themoviedb.org/3/movie/${currId}/videos?api_key=${apiKey}`;
+// // Getting youtube link to the trailer
+// async function getVideoAsync() {
+//     const videoUrl = `http://api.themoviedb.org/3/movie/${currId}/videos?api_key=${apiKey}`;
 
-    trailerId = '';
-    youtubeLink = '';
+//     trailerId = '';
+//     youtubeLink = '';
 
-    try {
-        const res = await fetch(videoUrl);
-        const json = await res.json();
-        if (json.results[0] != undefined) {
-            trailerId = json.results[0].key;
-            youtubeLink = `https://www.youtube.com/watch?v=${trailerId}`;
-        }
-    } catch (err) {
-        console.log(err);
-    }
+//     try {
+//         const res = await fetch(videoUrl);
+//         const json = await res.json();
+//         if (json.results[0] != undefined) {
+//             trailerId = json.results[0].key;
+//             youtubeLink = `https://www.youtube.com/watch?v=${trailerId}`;
+//         }
+//     } catch (err) {
+//         console.log(err);
+//     }
 
-    return [trailerId, youtubeLink]
-}
+//     return [trailerId, youtubeLink]
+// }
 
 // Insert new node after the referance one ( especially made for li elements )
 // referenceNode - node that you want to insert after
 // newNode - node that you want to insert
+
+// const getInfo = async function() {
+//     const {getCrewAsync, getMovieDetailsAsync, getVideoAsync} = await import('./modules/getInfo.js');
+//     const crew = await getCrewAsync();
+//     const details = await getMovieDetailsAsync();
+//     const video = await getVideoAsync();
+// }
+
 const insertAfterNode = (referenceNode, newNode) => {
     referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
 }
@@ -229,9 +129,9 @@ async function showDetailsAsync(item) {
     let directorsString = '';
     let writersString = '';
 
-    // const info = document.querySelector('.c-info');
     const movie = moviesArr.find(movie => movie.id == currId);
 
+    const {getCrewAsync, getMovieDetailsAsync, getVideoAsync} = await import('./modules/getInfo.js');
     const crew = await getCrewAsync();
     const details = await getMovieDetailsAsync();
     const video = await getVideoAsync();
@@ -240,8 +140,6 @@ async function showDetailsAsync(item) {
     const writerArr = crew[1];
     const castArr = crew[2];
 
-    console.log(castArr);
-
     const countriesArr = details[0];
     const genresArr = details[1];
     const ratingAverage = details[2];
@@ -249,7 +147,7 @@ async function showDetailsAsync(item) {
     const release = details[4];
 
     const trailerId = video[0];
-    const youtubeLink = video[1];
+    // const youtubeLink = video[1];
 
 
     const infoDetails = document.createElement('div');
