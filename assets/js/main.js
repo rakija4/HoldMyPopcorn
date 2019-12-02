@@ -160,7 +160,6 @@ async function getCrewAsync() {
         console.log(err);
     }
 
-    console.log(castArr);
     return [directorArr, writerArr, castArr];
 }
 
@@ -168,8 +167,12 @@ async function getCrewAsync() {
 async function getMovieDetailsAsync() {
     const detailsUrl = `https://api.themoviedb.org/3/movie/${currId}?api_key=${apiKey}`;
 
-    genresArr = [];
-    countriesArr = [];
+    let genresArr = [];
+    let countriesArr = [];
+
+    let ratingAverage;
+    let votesCount;
+    let release;
 
     try {
         const res = await fetch(detailsUrl);
@@ -186,7 +189,7 @@ async function getMovieDetailsAsync() {
 
         ratingAverage = json.vote_average;
         votesCount = json.vote_count;
-        status = json.status;
+        // status = json.status;
         release = json.release_date;
     } catch (err) {
         console.log(err);
@@ -199,21 +202,19 @@ async function getMovieDetailsAsync() {
 async function getVideoAsync() {
     const videoUrl = `http://api.themoviedb.org/3/movie/${currId}/videos?api_key=${apiKey}`;
 
-    trailerId = '';
-    youtubeLink = '';
+    let trailerId = '';
 
     try {
         const res = await fetch(videoUrl);
         const json = await res.json();
         if (json.results[0] != undefined) {
             trailerId = json.results[0].key;
-            youtubeLink = `https://www.youtube.com/watch?v=${trailerId}`;
         }
     } catch (err) {
         console.log(err);
     }
 
-    return [trailerId, youtubeLink]
+    return [trailerId]
 }
 
 // Insert new node after the referance one ( especially made for li elements )
@@ -229,7 +230,6 @@ async function showDetailsAsync(item) {
     let directorsString = '';
     let writersString = '';
 
-    // const info = document.querySelector('.c-info');
     const movie = moviesArr.find(movie => movie.id == currId);
 
     const crew = await getCrewAsync();
@@ -240,8 +240,6 @@ async function showDetailsAsync(item) {
     const writerArr = crew[1];
     const castArr = crew[2];
 
-    console.log(castArr);
-
     const countriesArr = details[0];
     const genresArr = details[1];
     const ratingAverage = details[2];
@@ -249,8 +247,6 @@ async function showDetailsAsync(item) {
     const release = details[4];
 
     const trailerId = video[0];
-    const youtubeLink = video[1];
-
 
     const infoDetails = document.createElement('div');
     infoDetails.classList.add('c-info__details');
